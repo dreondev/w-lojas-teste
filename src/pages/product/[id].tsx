@@ -1,5 +1,5 @@
 import { FiShoppingCart, FiMenu, FiFileText, FiTrash2 } from "react-icons/fi";
-import { FaHeart, FaPen, FaShoppingBasket, FaRegStar } from "react-icons/fa";
+import { FaHeart, FaPen, FaShoppingBasket, FaRegStar, FaYoutube } from "react-icons/fa";
 import { Heart, Star, Minus, Plus } from "lucide-react";
 import React, { useState, useEffect } from "react";
 
@@ -15,6 +15,7 @@ import { useCart } from "react-use-cart";
 import _ from "lodash";
 import { GetServerSideProps } from "next";
 import Router from "next/router";
+import { parseCookies, setCookie } from "nookies";
 
 function renderStars(rating: number) {
   const stars = [];
@@ -45,6 +46,30 @@ interface PageProps {
 }
 
 export default function ProductById({ product, store, products }: PageProps) {
+  const [mainImage, setMainImage] = useState(product.images[0]);
+
+  useEffect(() => {
+    const cookies = parseCookies();
+
+    if (!cookies.storeId && store?.id) {
+      setCookie(null, "storeId", store.id, {
+        maxAge: 12 * 60 * 60,
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      });
+    }
+  }, [store]);
+
+  React.useEffect(() => {
+    if (store.backgroundImage) {
+      document.body.style.setProperty("--background-url", `url(${store.backgroundImage})`);
+    }
+
+    return () => {
+      document.body.style.removeProperty('--background-url')
+    };
+  }, []);
+
   const [favoritedProducts, setFavoritedProducts] = useState<any[]>([]);
 
   useEffect(() => {
@@ -292,13 +317,31 @@ export default function ProductById({ product, store, products }: PageProps) {
         <div className="flex flex-col md:flex-row items-start gap-4">
           <div className="w-full md:w-1/2 p-4 rounded-[20px]">
             <img
-              src={product.images[0]}
+              src={mainImage}
               alt="Produto"
               className="rounded-[20px] w-full max-h-[460px] h-full mt-[-10px]"
             />
+            {product.video && (
+              <div onClick={() => { Router.push(product.video) }} className="w-full mt-[-50px] mx-2 text-white p-2 cursor-pointer">
+                <img className="w-[40px] h-full" src="https://upload.wikimedia.org/wikipedia/commons/e/ef/Youtube_logo.png" alt="yt" />
+              </div>
+            )}
+
+            <div className="flex gap-2 mt-4">
+              {product.images.map((image: string, index: number) => (
+                <img
+                  key={index}
+                  src={image}
+                  alt={`Thumbnail ${index + 1}`}
+                  onClick={() => setMainImage(image)}
+                  className={`w-16 h-full rounded-lg cursor-pointer border-2 ${mainImage === image ? "border-blue-500" : "border-gray-600"
+                    }`}
+                />
+              ))}
+            </div>
           </div>
 
-          <div className="w-full md:w-1/2 flex flex-col gap-4">
+          <div className="w-full md:w-1/2 flex flex-col gap-2">
             <div className="p-4 border border-slate-900 rounded-[20px]">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold">
@@ -315,8 +358,8 @@ export default function ProductById({ product, store, products }: PageProps) {
               </div>
 
               <div className="flex items-center gap-2 mt-4">
-                {renderStars(4)}
-                <span className="text-sm text-gray-400">4.0</span>
+                {renderStars(0)}
+                <span className="text-sm text-gray-400">0.0</span>
                 {product.hideSales !== true && (
                   <span className="text-sm text-gray-400"> - {product.sales} Venda(s)</span>
                 )}

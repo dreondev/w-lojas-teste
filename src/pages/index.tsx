@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/sheet";
 import { useCart } from "react-use-cart";
 import Router from "next/router";
+import { parseCookies, setCookie } from "nookies";
 
 function calculateDiscount(price: number, discount: number) {
   const discountAmount = _.subtract(price, discount);
@@ -56,6 +57,18 @@ interface PageProps {
 }
 
 export default function Home({ products, store, categories }: PageProps) {
+  React.useEffect(() => {
+    const cookies = parseCookies();
+
+    if (!cookies.storeId && store?.id) {
+      setCookie(null, "storeId", store.id, {
+        maxAge: 12 * 60 * 60,
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      });
+    }
+  }, [store]);
+
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState("");
@@ -82,10 +95,20 @@ export default function Home({ products, store, categories }: PageProps) {
     }
   }, []);
 
+  React.useEffect(() => {
+    if (store.backgroundImage) {
+      document.body.style.setProperty("--background-url", `url(${store.backgroundImage})`);
+    }
+
+    return () => {
+      document.body.style.removeProperty('--background-url')
+    };
+  }, []);
+
   return (
     <>
       {store?.announCard?.activated && (
-        <div className="bg-blue-600 text-white text-center py-2 font-semibold text-sm w-full">
+        <div className="z-10 bg-blue-600 text-white text-center py-2 font-semibold text-sm w-full">
           {store.announCard.text}
         </div>
       )}
@@ -269,7 +292,7 @@ export default function Home({ products, store, categories }: PageProps) {
           />
 
           {mobileMenuOpen && (
-            <div className="absolute top-full left-0 w-full bg-[#050e16] text-white z-10 md:hidden">
+            <div className="absolute top-full left-0 w-full bg-[#050e16] text-white md:hidden">
               <ul className="flex flex-col items-start p-4 space-y-4">
                 <li>
                   <a href="/" className="flex items-center space-x-2">
@@ -293,6 +316,10 @@ export default function Home({ products, store, categories }: PageProps) {
             </div>
           )}
         </header>
+
+        {store?.banner && (
+          <img className="w-full max-w-[1100px] mt-8 rounded-lg h-full max-h-[150px] mb-8 items-center self-center justify-center" src={store?.banner} alt="banner" />
+        )}
 
         <section className="relative flex-1 p-4 md:p-8 text-white">
           <div className="mb-6">
@@ -410,9 +437,9 @@ export default function Home({ products, store, categories }: PageProps) {
       </main>
 
       <footer className="py-4 border-t border-slate-900 text-center">
-        <p className="text-white text-sm font-medium">
+        <p className="text-white text-sm font-normal">
           Site desenvolvido com{" "}
-          <span className="text-blue-600 font-bold">Wizesale</span>
+          <span className="text-blue-600 font-bold hover:cursor-pointer hover:underline"><span onClick={() => { Router.push("https://wizesale.com") }} className="font-bold">Wizesale</span>.</span>
         </p>
       </footer>
     </>
@@ -428,7 +455,6 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   };
 
   const subOrDomain = getFirstSubdomain(context.req.headers.host);
-  console.log(subOrDomain)
 
   const getStoreIdRes = await fetch(`https://api.wizesale.com/v1/store?subOrDomain=${subOrDomain}`)
   const storeIdData = await getStoreIdRes.json()

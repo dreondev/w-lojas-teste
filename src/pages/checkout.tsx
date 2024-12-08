@@ -10,7 +10,7 @@ import { MdEmail } from "react-icons/md";
 import { useCart } from "react-use-cart";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { parseCookies } from "nookies"
+import { parseCookies, setCookie } from "nookies"
 import Router from "next/router";
 import {
   Sheet,
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/sheet";
 import _ from "lodash";
 import { Minus, Plus } from "lucide-react";
+import { GetServerSideProps } from "next";
 
 function calculateDiscount(price: number, discount: number) {
   const discountAmount = _.subtract(price, discount);
@@ -31,7 +32,33 @@ function calculateDiscount(price: number, discount: number) {
   return discountPercentage === "-Infinity" ? "0" : discountPercentage;
 }
 
-export default function Checkout() {
+interface PageProps {
+  store: any;
+}
+
+export default function Checkout({ store }: PageProps) {
+  React.useEffect(() => {
+    const cookies = parseCookies();
+
+    if (!cookies.storeId && store?.id) {
+      setCookie(null, "storeId", store.id, {
+        maxAge: 12 * 60 * 60,
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      });
+    }
+  }, [store]);
+
+  React.useEffect(() => {
+    if (store.backgroundImage) {
+      document.body.style.setProperty("--background-url", `url(${store.backgroundImage})`);
+    }
+
+    return () => {
+      document.body.style.removeProperty('--background-url')
+    };
+  }, []);
+
   const { isEmpty, items, cartTotal, updateItemQuantity, removeItem } = useCart();
 
   const [isClient, setIsClient] = React.useState(false);
@@ -147,7 +174,7 @@ export default function Checkout() {
       }
 
       if (couponResponse.ok) {
-        const { maxUses, uses, minPrice, expiresAt, discount } = couponData;
+        const { maxUses, uses, minPrice, expiresAt, discount } = couponData.coupon;
 
         if (maxUses !== null && uses >= maxUses) {
           toast.error("O cupom atingiu o limite de usos.");
@@ -166,6 +193,8 @@ export default function Checkout() {
 
         const discountAfterCoupon = (cartTotal * discount) / 100;
         const totalAfterDiscount = cartTotal - discountAfterCoupon;
+        console.log(discountAfterCoupon)
+        console.log(totalAfterDiscount)
 
         setCouponDiscounted(discountAfterCoupon)
         setTotalToPay(totalAfterDiscount)
@@ -199,7 +228,8 @@ export default function Checkout() {
   }
 
   return (
-    <main className="md:mx-[100px] h-screen flex flex-col justify-between">
+    <main className="mx-4 md:mx-8 lg:mx-16 xl:mx-24 2xl:mx-40 3xl:mx-64 flex flex-col min-h-screen">
+
       <ToastContainer
         position="top-right"
         autoClose={3000}
@@ -213,12 +243,12 @@ export default function Checkout() {
       <header className="flex justify-between items-center p-4 bg-transparent backdrop-blur-[10px] border-b border-slate-900 flex-wrap md:flex-nowrap">
         <div className="flex items-center mb-2 md:mb-0">
           <img
-            src="https://cdn.discordapp.com/icons/1108882461032718378/a_8c26791038c1b0710a9ff5b25d21ebe5.gif?size=2048"
+            src={store?.logo}
             alt="Logo"
             className="h-10 mr-4 rounded-[10px]"
           />
           <span className="font-medium text-[17px] text-white">
-            Brancola Store
+            {store?.title}
           </span>
         </div>
 
@@ -638,11 +668,45 @@ export default function Checkout() {
       </section>
 
       <footer className="py-4 border-t border-slate-900 text-center">
-        <p className="text-white text-sm font-medium">
+        <p className="text-white text-sm font-normal">
           Site desenvolvido com{" "}
-          <span className="text-blue-600 font-bold">Wizesale</span>
+          <span className="text-blue-600 font-bold hover:cursor-pointer hover:underline"><span onClick={() => { Router.push("https://wizesale.com") }} className="font-bold">Wizesale</span>.</span>
         </p>
       </footer>
     </main>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+
+  const getFirstSubdomain = (host: string | undefined): string => {
+    if (!host) return "";
+    const parts = host.split(".");
+    return parts.length > 1 ? parts[0] : host;
+  };
+
+  const subOrDomain = getFirstSubdomain(context.req.headers.host);
+
+  const getStoreIdRes = await fetch(`https://api.wizesale.com/v1/store?subOrDomain=${subOrDomain}`)
+  const storeIdData = await getStoreIdRes.json()
+
+  if (!storeIdData || !storeIdData.store) {
+    return {
+      notFound: true,
+    };
+  }
+
+  const storeResponse = await fetch(`https://api.wizesale.com/v1/store`, {
+    headers: {
+      Cookie: `storeId=${storeIdData.store.id};`,
+    },
+  });
+
+  const storeData = await storeResponse.json();
+
+  return {
+    props: {
+      store: storeData.store || null,
+    },
+  };
+};

@@ -14,6 +14,7 @@ import {
 import _ from "lodash";
 import { Minus, Plus } from "lucide-react";
 import Router from "next/router";
+import { parseCookies, setCookie } from "nookies";
 
 interface PageProps {
   store: any;
@@ -28,6 +29,28 @@ function calculateDiscount(price: number, discount: number) {
 }
 
 export default function TermsOfService({ store }: PageProps) {
+  React.useEffect(() => {
+    const cookies = parseCookies();
+
+    if (!cookies.storeId && store?.id) {
+      setCookie(null, "storeId", store.id, {
+        maxAge: 12 * 60 * 60,
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      });
+    }
+  }, [store]);
+
+  React.useEffect(() => {
+    if (store.backgroundImage) {
+      document.body.style.setProperty("--background-url", `url(${store.backgroundImage})`);
+    }
+
+    return () => {
+      document.body.style.removeProperty('--background-url')
+    };
+  }, []);
+
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const { isEmpty, items, updateItemQuantity, removeItem, cartTotal } =
     useCart();
@@ -44,7 +67,7 @@ export default function TermsOfService({ store }: PageProps) {
   }, []);
 
   return (
-    <main className="md:mx-[100px] h-screen flex flex-col justify-between">
+    <main className="mx-4 md:mx-8 lg:mx-16 xl:mx-24 2xl:mx-40 3xl:mx-64 flex flex-col min-h-screen">
       <header className="flex justify-between items-center p-4 bg-transparent backdrop-blur-[10px] border-b border-slate-900 flex-wrap md:flex-nowrap">
         <div className="flex items-center mb-2 md:mb-0">
           <img
@@ -259,7 +282,7 @@ export default function TermsOfService({ store }: PageProps) {
         <hr className="mb-6 border-slate-900" />
 
         <div className="space-y-4">
-          {store.terms.split('\n').map((line: any, index: number) => {
+          {store.terms && store.terms.split('\n').map((line: any, index: number) => {
             if (index === 0 || line.match(/^[0-9]+\./)) {
               return (
                 <div key={index}>
@@ -279,9 +302,9 @@ export default function TermsOfService({ store }: PageProps) {
 
 
       <footer className="py-4 border-t border-slate-900 text-center">
-        <p className="text-white text-sm font-medium">
+        <p className="text-white text-sm font-normal">
           Site desenvolvido com{" "}
-          <span className="text-blue-600 font-bold">Wizesale</span>
+          <span className="text-blue-600 font-bold hover:cursor-pointer hover:underline"><span onClick={() => { Router.push("https://wizesale.com") }} className="font-bold">Wizesale</span>.</span>
         </p>
       </footer>
     </main>
