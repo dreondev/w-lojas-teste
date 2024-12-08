@@ -1,9 +1,15 @@
-import { Html, Head, Main, NextScript } from "next/document";
+import { Html, Head, Main, NextScript, DocumentContext } from "next/document";
 
-export default function Document() {
+interface DocumentProps {
+  title?: string; // Adiciona propriedades opcionais, se necessário
+}
+
+export default function Document({ title }: DocumentProps) {
   return (
     <Html lang="en">
-      <Head />
+      <Head>
+        <title>{title || "Título Padrão"}</title>
+      </Head>
       <body>
         <Main />
         <NextScript />
@@ -11,3 +17,16 @@ export default function Document() {
     </Html>
   );
 }
+
+// getInitialProps para adicionar propriedades dinâmicas
+Document.getInitialProps = async (ctx: DocumentContext) => {
+  const initialProps = await ctx.renderPage();
+
+  // Simulação de obtenção de dados dinâmicos
+  const dynamicTitle = "Título Dinâmico do Servidor";
+
+  return {
+    ...initialProps,
+    title: dynamicTitle, // Adicione propriedades aqui
+  };
+};
