@@ -89,7 +89,7 @@ export default function Home({ products, store, categories }: PageProps) {
           {store.announCard.text}
         </div>
       )}
-      <main className="mx-4 md:mx-6 lg:mx-8 xl:mx-[100px] h-screen flex flex-col justify-between">
+      <main className="mx-4 md:mx-8 lg:mx-16 xl:mx-24 2xl:mx-40 3xl:mx-64 flex flex-col min-h-screen">
         <header className="flex justify-between items-center p-4 bg-transparent backdrop-blur-[10px] border-b border-slate-900 flex-wrap md:flex-nowrap">
           <div className="flex items-center mb-2 md:mb-0">
             <img
@@ -294,7 +294,7 @@ export default function Home({ products, store, categories }: PageProps) {
           )}
         </header>
 
-        <section className="p-4 md:p-8 text-white">
+        <section className="relative flex-1 p-4 md:p-8 text-white">
           <div className="mb-6">
             <h1 className="text-2xl md:text-3xl font-bold">{store?.title}</h1>
             <p className="text-gray-400">
@@ -407,14 +407,14 @@ export default function Home({ products, store, categories }: PageProps) {
             </div>
           </div>
         </section>
-
-        <footer className="py-4 border-t border-slate-900 text-center">
-          <p className="text-white text-sm font-medium">
-            Site desenvolvido com{" "}
-            <span className="text-blue-600 font-bold">Wizesale</span>
-          </p>
-        </footer>
       </main>
+
+      <footer className="py-4 border-t border-slate-900 text-center">
+        <p className="text-white text-sm font-medium">
+          Site desenvolvido com{" "}
+          <span className="text-blue-600 font-bold">Wizesale</span>
+        </p>
+      </footer>
     </>
   );
 }
