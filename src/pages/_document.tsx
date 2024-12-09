@@ -12,7 +12,7 @@ export default function Document({ title, description, favIcon, image }: Documen
     <Html lang="en">
       <Head>
         {favIcon && <link rel="icon" href={favIcon} />}
-        <title>{title || "404 - Loja não encontrada"}</title>
+        <title>{title || "404 - Store Not Found"}</title>
         {description && <meta name="description" content={description} />}
         {image && <meta property="og:image" content={image} />}
         {title && <meta property="og:title" content={title} />}
@@ -47,7 +47,7 @@ Document.getInitialProps = async (ctx: DocumentContext) => {
   const subOrDomain = getFirstSubdomain(ctx.req.headers.host);
 
   const getStoreIdRes = await fetch(
-    `https://api.wizesale.com/v1/store?subOrDomain=${subOrDomain}`
+    `https://api.wizesale.com/v1/store?subOrDomain=${"brancola"}`
   );
   const storeIdData = await getStoreIdRes.json();
 

@@ -68,6 +68,12 @@ export default function Feedbacks({ store, feedbacks }: PageProps) {
   }, []);
 
   return (
+    <>
+    {store?.announCard?.activated && (
+      <div className="z-10 bg-blue-600 text-white text-center py-2 font-semibold text-sm w-full">
+        {store.announCard.text}
+      </div>
+    )}
     <main className="mx-4 md:mx-8 lg:mx-16 xl:mx-24 2xl:mx-40 3xl:mx-64 flex flex-col min-h-screen">
       <header className="flex justify-between items-center p-4 bg-transparent backdrop-blur-[10px] border-b border-slate-900 flex-wrap md:flex-nowrap">
         <div className="flex items-center mb-2 md:mb-0">
@@ -320,6 +326,7 @@ export default function Feedbacks({ store, feedbacks }: PageProps) {
         </p>
       </footer>
     </main>
+    </>
   );
 }
 

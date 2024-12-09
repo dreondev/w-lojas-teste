@@ -228,6 +228,12 @@ export default function Checkout({ store }: PageProps) {
   }
 
   return (
+    <>
+    {store?.announCard?.activated && (
+      <div className="z-10 bg-blue-600 text-white text-center py-2 font-semibold text-sm w-full">
+        {store.announCard.text}
+      </div>
+    )}
     <main className="mx-4 md:mx-8 lg:mx-16 xl:mx-24 2xl:mx-40 3xl:mx-64 flex flex-col min-h-screen">
 
       <ToastContainer
@@ -674,6 +680,7 @@ export default function Checkout({ store }: PageProps) {
         </p>
       </footer>
     </main>
+    </>
   );
 }
 
