@@ -47,7 +47,7 @@ Document.getInitialProps = async (ctx: DocumentContext) => {
   const subOrDomain = getFirstSubdomain(ctx.req.headers.host);
 
   const getStoreIdRes = await fetch(
-    `https://api.wizesale.com/v1/store?subOrDomain=${"brancola"}`
+    `https://api.wizesale.com/v1/store?subOrDomain=${subOrDomain}`
   );
   const storeIdData = await getStoreIdRes.json();
 
