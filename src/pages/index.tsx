@@ -32,6 +32,8 @@ import {
 import { useCart } from "react-use-cart";
 import Router from "next/router";
 import { parseCookies, setCookie } from "nookies";
+import { BsBoxSeamFill } from "react-icons/bs";
+import dynamic from "next/dynamic";
 
 function calculateDiscount(price: number, discount: number) {
   const discountAmount = _.subtract(price, discount);
@@ -54,9 +56,15 @@ interface PageProps {
   products: any;
   categories: Category[];
   store: any;
+  websiteId: string
 }
 
-export default function Home({ products, store, categories }: PageProps) {
+const CrispWithNoSSR = dynamic(
+  () => import('@/components/Crisp'),
+  { ssr: false }
+)
+
+export default function Home({ products, store, categories, websiteId }: PageProps) {
   React.useEffect(() => {
     const cookies = parseCookies();
 
@@ -113,6 +121,7 @@ export default function Home({ products, store, categories }: PageProps) {
         </div>
       )}
       <main className="mx-4 md:mx-8 lg:mx-16 xl:mx-24 2xl:mx-40 3xl:mx-64 flex flex-col min-h-screen">
+        <CrispWithNoSSR websiteId={`${websiteId}`}/>
         <header className="flex justify-between items-center p-4 bg-transparent backdrop-blur-[10px] border-b border-slate-900 flex-wrap md:flex-nowrap">
           <div className="flex items-center mb-2 md:mb-0">
             <img
@@ -398,16 +407,28 @@ export default function Home({ products, store, categories }: PageProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {filteredProducts.map((product: any) => (
                 <div
-                  onClick={() => { window.location.href = `/product/${product.id}` }}
+                  onClick={() => {
+                    if (product.stock > 0) {
+                      window.location.href = `/product/${product.id}`;
+                    }
+                  }}
                   key={product.id}
-                  className="hover:cursor-pointer relative group bg-[#050e16] h-64 rounded-lg border border-slate-900 overflow-hidden"
+                  className={`relative group bg-[#050e16] h-64 rounded-lg border border-slate-900 overflow-hidden 
+          ${product.stock <= 0 ? "cursor-not-allowed" : "hover:cursor-pointer"}`}
                 >
-                  <div className="overflow-hidden h-40">
+                  <div className="overflow-hidden h-40 relative">
                     <img
                       src={product.images[0]}
                       alt={product.name}
-                      className="w-full h-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-110"
+                      className={`w-full h-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-110 ${product.stock <= 0 ? "blur-sm" : ""
+                        }`}
                     />
+                    {product.stock <= 0 && (
+                      <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-2">
+                        <BsBoxSeamFill className="text-white w-10 h-10" />
+                        <span className="text-white font-bold text-lg">Estoque Esgotado</span>
+                      </div>
+                    )}
                   </div>
                   <div className="p-2">
                     <h3 className="text-white text-lg font-bold">
@@ -427,12 +448,15 @@ export default function Home({ products, store, categories }: PageProps) {
                         )}% OFF
                       </span>
                     </div>
-                    <p className="text-white text-md">R$ {product.price?.toFixed(2).replace(".", ",") || "0,00"}</p>
+                    <p className="text-white text-md">
+                      R$ {product.price?.toFixed(2).replace(".", ",") || "0,00"}
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
+
         </section>
       </main>
 
@@ -456,7 +480,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
   const subOrDomain = getFirstSubdomain(context.req.headers.host);
 
-  const getStoreIdRes = await fetch(`https://api.wizesale.com/v1/store?subOrDomain=${subOrDomain}`)
+  const getStoreIdRes = await fetch(`https://api.wizesale.com/v1/store?subOrDomain=${"oneapplications"}`)
   const storeIdData = await getStoreIdRes.json()
 
   if (!storeIdData || !storeIdData.store) {
@@ -489,6 +513,16 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     }
   );
 
+  const integrationResponse = await fetch(
+    `https://api.wizesale.com/v1/integration/CrispChat`,
+    {
+      headers: {
+        Cookie: `storeId=${storeIdData.store.id};`,
+      },
+    }
+  );
+
+  const integrationData = await integrationResponse.json();
   const storeData = await storeResponse.json();
   const productsData = await productsResponse.json();
   const categoriesData = await categoriesResponse.json();
@@ -498,6 +532,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       products: productsData.products || [],
       categories: categoriesData.categories || [],
       store: storeData.store || null,
+      websiteId: integrationData?.integration?.informations?.Website_ID || null
     },
   };
 };

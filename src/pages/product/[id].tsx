@@ -1,5 +1,5 @@
 import { FiShoppingCart, FiMenu, FiFileText, FiTrash2 } from "react-icons/fi";
-import { FaHeart, FaPen, FaShoppingBasket, FaRegStar, FaYoutube } from "react-icons/fa";
+import { FaHeart, FaPen, FaShoppingBasket, FaRegStar } from "react-icons/fa";
 import { Heart, Star, Minus, Plus } from "lucide-react";
 import React, { useState, useEffect } from "react";
 
@@ -16,6 +16,7 @@ import _ from "lodash";
 import { GetServerSideProps } from "next";
 import Router from "next/router";
 import { parseCookies, setCookie } from "nookies";
+import { BsBoxSeamFill } from "react-icons/bs";
 
 function renderStars(rating: number) {
   const stars = [];
@@ -364,8 +365,12 @@ export default function ProductById({ product, store, products }: PageProps) {
                 </div>
 
                 <div className="flex items-center gap-2 mt-4">
-                  {renderStars(0)}
-                  <span className="text-sm text-gray-400">0.0</span>
+                  {product.hideReviews !== true && (
+                    <>
+                      {renderStars(0)}
+                      <span className="text-sm text-gray-400">0.0</span>
+                    </>
+                  )}
                   {product.hideSales !== true && (
                     <span className="text-sm text-gray-400"> - {product.sales} Venda(s)</span>
                   )}
@@ -563,16 +568,28 @@ export default function ProductById({ product, store, products }: PageProps) {
                 .slice(0, 3)
                 .map((product: any) => (
                   <div
-                    onClick={() => { window.location.href = `/product/${product.id}` }}
+                    onClick={() => {
+                      if (product.stock > 0) {
+                        window.location.href = `/product/${product.id}`;
+                      }
+                    }}
                     key={product.id}
-                    className="hover:cursor-pointer relative group bg-[#050e16] h-64 rounded-lg border border-slate-900 overflow-hidden"
+                    className={`relative group bg-[#050e16] h-64 rounded-lg border border-slate-900 overflow-hidden 
+          ${product.stock <= 0 ? "cursor-not-allowed" : "hover:cursor-pointer"}`}
                   >
-                    <div className="overflow-hidden h-40">
+                    <div className="overflow-hidden h-40 relative">
                       <img
                         src={product.images[0]}
                         alt={product.name}
-                        className="w-full h-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-110"
+                        className={`w-full h-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-110 ${product.stock <= 0 ? "blur-sm" : ""
+                          }`}
                       />
+                      {product.stock <= 0 && (
+                        <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-2">
+                          <BsBoxSeamFill className="text-white w-10 h-10" />
+                          <span className="text-white font-bold text-lg">Estoque Esgotado</span>
+                        </div>
+                      )}
                     </div>
                     <div className="p-2">
                       <h3 className="text-white text-lg font-bold">
@@ -592,7 +609,9 @@ export default function ProductById({ product, store, products }: PageProps) {
                           )}% OFF
                         </span>
                       </div>
-                      <p className="text-white text-md">R$ {product.price.toFixed(2).replace(".", ",") || 0}</p>
+                      <p className="text-white text-md">
+                        R$ {product.price?.toFixed(2).replace(".", ",") || "0,00"}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -606,7 +625,7 @@ export default function ProductById({ product, store, products }: PageProps) {
             <span className="text-blue-600 font-bold">Wizesale</span>
           </p>
         </footer>
-      </main>
+      </main >
     </>
   );
 }
@@ -621,7 +640,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
   const subOrDomain = getFirstSubdomain(context.req.headers.host);
 
-  const getStoreIdRes = await fetch(`https://api.wizesale.com/v1/store?subOrDomain=${subOrDomain}`)
+  const getStoreIdRes = await fetch(`https://api.wizesale.com/v1/store?subOrDomain=${"brancola"}`)
   const storeIdData = await getStoreIdRes.json()
 
   if (!storeIdData || !storeIdData.store) {
@@ -659,8 +678,6 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const storeData = await storeResponse.json();
   const productData = await productResponse.json();
   const productsData = await productsResponse.json();
-
-  console.log(productData.product)
 
   return {
     props: {
