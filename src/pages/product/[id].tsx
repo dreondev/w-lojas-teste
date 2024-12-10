@@ -640,7 +640,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
   const subOrDomain = getFirstSubdomain(context.req.headers.host);
 
-  const getStoreIdRes = await fetch(`https://api.wizesale.com/v1/store?subOrDomain=${"brancola"}`)
+  const getStoreIdRes = await fetch(`https://api.wizesale.com/v1/store?subOrDomain=${subOrDomain}`)
   const storeIdData = await getStoreIdRes.json()
 
   if (!storeIdData || !storeIdData.store) {
